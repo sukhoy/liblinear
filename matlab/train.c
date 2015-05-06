@@ -243,16 +243,19 @@ int parse_command_line(int nrhs, const mxArray *prhs[], char *model_file_name)
 	return 0;
 }
 
-static void fake_answer(mxArray *plhs[])
+static void fake_answer(int nlhs, mxArray *plhs[])
 {
-	plhs[0] = mxCreateDoubleMatrix(0, 0, mxREAL);
+	int i;
+	for(i=0;i<nlhs;i++)
+		plhs[i] = mxCreateDoubleMatrix(0, 0, mxREAL);
 }
 
 int read_problem_sparse(const mxArray *label_vec, const mxArray *instance_mat)
 {
-	int i, j, k, low, high;
-	mwIndex *ir, *jc;
-	int elements, max_index, num_samples, label_vector_row_num;
+	mwIndex *ir, *jc, low, high, k;
+	// using size_t due to the output type of matlab functions
+	size_t i, j, l, elements, max_index, label_vector_row_num;
+	mwSize num_samples;
 	double *samples, *labels;
 	mxArray *instance_mat_col; // instance sparse matrix in column format
 
@@ -277,10 +280,11 @@ int read_problem_sparse(const mxArray *label_vec, const mxArray *instance_mat)
 	}
 
 	// the number of instance
-	prob.l = (int) mxGetN(instance_mat_col);
-	label_vector_row_num = (int) mxGetM(label_vec);
+	l = mxGetN(instance_mat_col);
+	label_vector_row_num = mxGetM(label_vec);
+	prob.l = (int) l;
 
-	if(label_vector_row_num!=prob.l)
+	if(label_vector_row_num!=l)
 	{
 		mexPrintf("Length of label vector does not match # of instances.\n");
 		return -1;
@@ -292,23 +296,23 @@ int read_problem_sparse(const mxArray *label_vec, const mxArray *instance_mat)
 	ir = mxGetIr(instance_mat_col);
 	jc = mxGetJc(instance_mat_col);
 
-	num_samples = (int) mxGetNzmax(instance_mat_col);
+	num_samples = mxGetNzmax(instance_mat_col);
 
-	elements = num_samples + prob.l*2;
-	max_index = (int) mxGetM(instance_mat_col);
+	elements = num_samples + l*2;
+	max_index = mxGetM(instance_mat_col);
 
-	prob.y = Malloc(double, prob.l);
-	prob.x = Malloc(struct feature_node*, prob.l);
+	prob.y = Malloc(double, l);
+	prob.x = Malloc(struct feature_node*, l);
 	x_space = Malloc(struct feature_node, elements);
 
 	prob.bias=bias;
 
 	j = 0;
-	for(i=0;i<prob.l;i++)
+	for(i=0;i<l;i++)
 	{
 		prob.x[i] = &x_space[j];
 		prob.y[i] = labels[i];
-		low = (int) jc[i], high = (int) jc[i+1];
+		low = jc[i], high = jc[i+1];
 		for(k=low;k<high;k++)
 		{
 			x_space[j].index = (int) ir[k]+1;
@@ -317,7 +321,7 @@ int read_problem_sparse(const mxArray *label_vec, const mxArray *instance_mat)
 	 	}
 		if(prob.bias>=0)
 		{
-			x_space[j].index = max_index+1;
+			x_space[j].index = (int) max_index+1;
 			x_space[j].value = prob.bias;
 			j++;
 		}
@@ -325,9 +329,9 @@ int read_problem_sparse(const mxArray *label_vec, const mxArray *instance_mat)
 	}
 
 	if(prob.bias>=0)
-		prob.n = max_index+1;
+		prob.n = (int) max_index+1;
 	else
-		prob.n = max_index;
+		prob.n = (int) max_index;
 
 	return 0;
 }
@@ -342,14 +346,29 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	// (for cross validation)
 	srand(1);
 
+	if(nlhs > 1)
+	{
+		exit_with_help();
+		fake_answer(nlhs, plhs);
+		return;
+	}
+
 	// Transform the input Matrix to libsvm format
 	if(nrhs > 1 && nrhs < 5)
 	{
 		int err=0;
 
-		if(!mxIsDouble(prhs[0]) || !mxIsDouble(prhs[1])) {
+		if(!mxIsDouble(prhs[0]) || !mxIsDouble(prhs[1]))
+		{
 			mexPrintf("Error: label vector and instance matrix must be double\n");
-			fake_answer(plhs);
+			fake_answer(nlhs, plhs);
+			return;
+		}
+
+		if(mxIsSparse(prhs[0]))
+		{
+			mexPrintf("Error: label vector should not be in sparse format");
+			fake_answer(nlhs, plhs);
 			return;
 		}
 
@@ -357,7 +376,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 		{
 			exit_with_help();
 			destroy_param(&param);
-			fake_answer(plhs);
+			fake_answer(nlhs, plhs);
 			return;
 		}
 
@@ -368,7 +387,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 			mexPrintf("Training_instance_matrix must be sparse; "
 				"use sparse(Training_instance_matrix) first\n");
 			destroy_param(&param);
-			fake_answer(plhs);
+			fake_answer(nlhs, plhs);
 			return;
 		}
 
@@ -383,7 +402,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 			free(prob.y);
 			free(prob.x);
 			free(x_space);
-			fake_answer(plhs);
+			fake_answer(nlhs, plhs);
 			return;
 		}
 
@@ -412,7 +431,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	else
 	{
 		exit_with_help();
-		fake_answer(plhs);
+		fake_answer(nlhs, plhs);
 		return;
 	}
 }
