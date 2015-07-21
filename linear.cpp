@@ -3122,7 +3122,7 @@ void seed_liblinear_PRNG(int seed) {
 }
 
 int sfmt_random() {
-  return sfmt_genrand_uint32(&sfmt);
+  return sfmt_genrand_uint32(&sfmt) % RAND_MAX;
 }
 
 static void seed_sfmt_startup() __attribute__((constructor)) {
