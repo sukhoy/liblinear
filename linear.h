@@ -71,6 +71,9 @@ int check_probability_model(const struct model *model);
 int check_regression_model(const struct model *model);
 void set_print_string_function(void (*print_func) (const char*));
 
+/* case 1098: replacing standard rand() with SFMT */
+void seed_liblinear_PRNG(int seed);
+
 #ifdef __cplusplus
 }
 #endif

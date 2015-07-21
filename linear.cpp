@@ -6,6 +6,10 @@
 #include <locale.h>
 #include "linear.h"
 #include "tron.h"
+
+#define rand sfmt_random
+static inline int sfmt_random();
+
 typedef signed char schar;
 template <class T> static inline void swap(T& x, T& y) { T t=x; x=y; y=t; }
 #ifndef min
@@ -3109,3 +3113,18 @@ void set_print_string_function(void (*print_func)(const char*))
 		liblinear_print_string = print_func;
 }
 
+// case 1098: use SFMT instead of the standard rand()
+#include "SFMT/SFMT.h"
+static sfmt_t sfmt = {};
+
+void seed_liblinear_PRNG(int seed) {
+  sfmt_init_gen_rand(&sfmt, seed);
+}
+
+int sfmt_random() {
+  return sfmt_genrand_uint32(&sfmt);
+}
+
+static void seed_sfmt_startup() __attribute__((constructor)) {
+  seed_liblinear_PRNG(0);
+}
