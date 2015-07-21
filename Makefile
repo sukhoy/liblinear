@@ -41,6 +41,6 @@ clean:
 	rm -f *~ tron.o linear.o train predict liblinear.so.$(SHVER)
 	rm -f SFMT/SFMT.o SFMT/SFMT.a
 
-SFMT/SFMT.a: SFMT/SFMT.c SFMT/sfmt.h
+SFMT/SFMT.a: SFMT/SFMT.c
 	$(CC) $(CFLAGS) -c -o SFMT/SFMT.o SFMT/SFMT.c
 	ar -rsc SFMT/SFMT.a SFMT/SFMT.o

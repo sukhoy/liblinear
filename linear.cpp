@@ -3115,7 +3115,7 @@ void set_print_string_function(void (*print_func)(const char*))
 
 // case 1098: use SFMT instead of the standard rand()
 #include "SFMT/SFMT.h"
-static sfmt_t sfmt = {};
+static __thread sfmt_t sfmt = {};
 
 void seed_liblinear_PRNG(int seed) {
   sfmt_init_gen_rand(&sfmt, seed);
@@ -3125,6 +3125,6 @@ int sfmt_random() {
   return sfmt_genrand_uint32(&sfmt) % RAND_MAX;
 }
 
-static void seed_sfmt_startup() __attribute__((constructor)) {
+static void __attribute__((constructor)) seed_sfmt_startup() {
   seed_liblinear_PRNG(0);
 }
