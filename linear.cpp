@@ -2448,13 +2448,12 @@ model* train(const problem *prob, const parameter *param)
 					for(; k<sub_prob.l; k++)
 						sub_prob.y[k] = -1;
 
-				    double *w=Malloc(double, w_size);
-				    if(param->init_sol != NULL)
-				        for(j=0;j<w_size;j++)
-					    w[j] = param->init_sol[j*nr_class+i];
-				    else
-				        for(j=0;j<w_size;j++)
-					    w[j] = 0;
+					if(param->init_sol != NULL)
+						for(j=0;j<w_size;j++)
+							w[j] = param->init_sol[j*nr_class+i];
+					else
+						for(j=0;j<w_size;j++)
+							w[j] = 0;
 
 					train_one(&sub_prob, param, w, weighted_C[i], param->C);
 
