@@ -30,7 +30,7 @@ template <class S, class T> static inline void clone(T*& dst, S* src, int n)
 // The following function can be used to initialize the default value for
 // the limit on the max # of iterations for solving an optimization problem.
 static inline int def_max_iter() {
-	const char *envstr = getenv("LIBLINEAR_MAX_ITER");
+	const char *envstr = getenv("LL_MAX_ITER");
 	int max_iter = 1000;
 	if (envstr) {
 		char *endptr = NULL;
