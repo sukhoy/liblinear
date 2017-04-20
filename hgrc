@@ -1,0 +1,23 @@
+# This file may be symlinked into .hg directory in the working copy
+# using the following command:
+#
+# $ ln -s hgrc .hg/
+
+# The encfs repository can be mounted using mount_encfs script as follows:
+#
+# $ ./mount_encfs.sh
+#
+# and unmounted using
+#
+# $ ./umount_encfs.sh
+#
+
+[paths]
+default = ssh://hg@bitbucket.org/vsukhoy/liblinear
+encfs = $HOME/encfs/hg/libliear
+
+[web]
+description = liblinear tracking repository
+
+[hooks]
+changegroup.encfs = hg push -f encfs
