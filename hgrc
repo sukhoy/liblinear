@@ -14,7 +14,7 @@
 
 [paths]
 default = ssh://hg@bitbucket.org/vsukhoy/liblinear
-encfs = $HOME/encfs/hg/libliear
+encfs = $HOME/encfs/hg/liblinear
 
 [web]
 description = liblinear tracking repository
