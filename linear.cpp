@@ -7,6 +7,10 @@
 #include "linear.h"
 #include "tron.h"
 int liblinear_version = LIBLINEAR_VERSION;
+
+#define rand sfmt_random
+static inline int sfmt_random();
+
 typedef signed char schar;
 template <class T> static inline void swap(T& x, T& y) { T t=x; x=y; y=t; }
 #ifndef min
@@ -22,6 +26,23 @@ template <class S, class T> static inline void clone(T*& dst, S* src, int n)
 }
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 #define INF HUGE_VAL
+
+
+// The following function can be used to initialize the default value for
+// the limit on the max # of iterations for solving an optimization problem.
+static inline int def_max_iter() {
+	const char *envstr = getenv("LL_MAX_ITER");
+	int max_iter = 1000;
+	if (envstr) {
+		char *endptr = NULL;
+		int env_max_iter = strtol(envstr, &endptr, 0);
+		if (endptr != envstr) {
+			// Some digits were parsed.
+			max_iter = env_max_iter;
+		}
+	}
+	return max_iter;
+  }
 
 static void print_string_stdout(const char *s)
 {
@@ -779,7 +800,7 @@ static void solve_l2r_l1l2_svc(
 	int i, s, iter = 0;
 	double C, d, G;
 	double *QD = new double[l];
-	int max_iter = 1000;
+	int max_iter = def_max_iter();
 	int *index = new int[l];
 	double *alpha = new double[l];
 	schar *y = new schar[l];
@@ -983,7 +1004,7 @@ static void solve_l2r_l1l2_svr(
 	int w_size = prob->n;
 	double eps = param->eps;
 	int i, s, iter = 0;
-	int max_iter = 1000;
+	int max_iter = def_max_iter();
 	int active_size = l;
 	int *index = new int[l];
 
@@ -1187,7 +1208,7 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
 	int w_size = prob->n;
 	int i, s, iter = 0;
 	double *xTx = new double[l];
-	int max_iter = 1000;
+	int max_iter = def_max_iter();
 	int *index = new int[l];
 	double *alpha = new double[2*l]; // store alpha and C - alpha
 	schar *y = new schar[l];
@@ -1346,7 +1367,7 @@ static void solve_l1r_l2_svc(
 	int l = prob_col->l;
 	int w_size = prob_col->n;
 	int j, s, iter = 0;
-	int max_iter = 1000;
+	int max_iter = def_max_iter();
 	int active_size = w_size;
 	int max_num_linesearch = 20;
 
@@ -1626,7 +1647,7 @@ static void solve_l1r_lr(
 	int w_size = prob_col->n;
 	int j, s, newton_iter=0, iter=0;
 	int max_newton_iter = 100;
-	int max_iter = 1000;
+	int max_iter = def_max_iter();
 	int max_num_linesearch = 20;
 	int active_size;
 	int QP_active_size;
@@ -3040,3 +3061,18 @@ void set_print_string_function(void (*print_func)(const char*))
 		liblinear_print_string = print_func;
 }
 
+// case 1098: use SFMT instead of the standard rand()
+#include "SFMT/SFMT.h"
+static __thread sfmt_t sfmt = {};
+
+void seed_liblinear_PRNG(int seed) {
+  sfmt_init_gen_rand(&sfmt, seed);
+}
+
+int sfmt_random() {
+  return sfmt_genrand_uint32(&sfmt) % RAND_MAX;
+}
+
+static void __attribute__((constructor)) seed_sfmt_startup() {
+  seed_liblinear_PRNG(0);
+}
